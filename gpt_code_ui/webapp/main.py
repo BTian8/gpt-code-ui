@@ -12,7 +12,7 @@ import pandas as pd
 from collections import deque
 
 from flask_cors import CORS
-from flask import Flask, request, jsonify, send_from_directory, Response
+from flask import Flask, request, jsonify, send_from_directory, Response, session
 from dotenv import load_dotenv
 
 from gpt_code_ui.kernel_program.main import APP_PORT as KERNEL_APP_PORT
@@ -33,8 +33,7 @@ elif openai.api_type == "azure":
 else:
     raise ValueError(f'Invalid OPENAI_API_TYPE: {openai.api_type}')
 
-UPLOAD_FOLDER = 'workspace/'
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+
 
 
 APP_PORT = int(os.environ.get("WEB_PORT", 8080))
@@ -181,14 +180,16 @@ cli = sys.modules['flask.cli']
 cli.show_server_banner = lambda *x: None
 
 app = Flask(__name__)
-app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-
+app.secret_key = os.urandom(24)
 CORS(app)
 
 
 @app.route('/')
 def index():
-
+    session['user_id'] = os.urandom(12)
+    UPLOAD_FOLDER = f'workspace/{session["user_id"]}'
+    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     # Check if index.html exists in the static folder
     if not os.path.exists(os.path.join(app.root_path, 'static/index.html')):
         print("index.html not found in static folder. Exiting. Did you forget to run `make compile_frontend` before installing the local package?")
@@ -213,7 +214,6 @@ def proxy_kernel_manager(path):
                         'content-length', 'transfer-encoding', 'connection']
     headers = [(name, value) for (name, value) in resp.raw.headers.items()
                if name.lower() not in excluded_headers]
-
     response = Response(resp.content, resp.status_code, headers)
     return response
 
