@@ -8,6 +8,7 @@ import logging
 import sys
 import openai
 import pandas as pd
+import numpy as np
 
 from collections import deque
 
@@ -186,8 +187,10 @@ CORS(app)
 
 @app.route('/')
 def index():
-    session['user_id'] = os.urandom(12)
-    UPLOAD_FOLDER = f'workspace/{session["user_id"]}'
+    high_limit = 10**15
+    random_int = np.random.randint(0, high_limit)
+    session['user_id'] = random_int
+    UPLOAD_FOLDER = f'workspace/{session["user_id"]}/'
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
     # Check if index.html exists in the static folder
