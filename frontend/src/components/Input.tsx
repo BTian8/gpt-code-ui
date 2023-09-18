@@ -6,8 +6,11 @@ import TextareaAutosize from "react-textarea-autosize";
 import Config from "../config";
 import "./Input.css";
 
-export default function Input(props: { onSendMessage: any, onStartUpload: any, onCompletedUpload: any }) {
-
+export default function Input(props: {
+  onSendMessage: any;
+  onStartUpload: any;
+  onCompletedUpload: any;
+}) {
   let fileInputRef = useRef<HTMLInputElement>(null);
   let [inputIsFocused, setInputIsFocused] = useState<boolean>(false);
   let [userInput, setUserInput] = useState<string>("");
@@ -34,6 +37,11 @@ export default function Input(props: { onSendMessage: any, onStartUpload: any, o
 
       // Append the file to the form data
       formData.append("file", file);
+      const windowId = sessionStorage.getItem("windowId");
+      if (windowId !== null) {
+        console.log(windowId);
+        formData.append("windowId", windowId);
+      }
 
       props.onStartUpload(file.name);
 
@@ -49,18 +57,16 @@ export default function Input(props: { onSendMessage: any, onStartUpload: any, o
 
         const json = await response.json();
         props.onCompletedUpload(json["message"]);
-
       } catch (error) {
         console.error("Error:", error);
       }
     }
   };
-  
 
   const handleSendMessage = async () => {
     props.onSendMessage(userInput);
     setUserInput("");
-  }
+  };
 
   const handleInputChange = (e: any) => {
     setUserInput(e.target.value);
@@ -68,8 +74,8 @@ export default function Input(props: { onSendMessage: any, onStartUpload: any, o
 
   const handleKeyDown = (e: any) => {
     if (e.key === "Enter" && e.shiftKey === false) {
-        e.preventDefault();
-        handleSendMessage();
+      e.preventDefault();
+      handleSendMessage();
     }
   };
 

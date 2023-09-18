@@ -185,14 +185,25 @@ app.secret_key = os.urandom(24)
 CORS(app)
 
 
-@app.route('/')
-def index():
-    high_limit = 10**15
-    random_int = np.random.randint(0, high_limit)
-    session['user_id'] = random_int
+@app.route('/SetUserId', methods=["POST"])
+def setId():
+    data = request.get_json()
+    openAIKey = data.get('openAIKey', '')
+    try:
+        session['user_id'] = openAIKey
+    except NameError:
+        high_limit = 10**15
+        random_int = np.random.randint(0, high_limit)
+        session['user_id'] = random_int
+           
     UPLOAD_FOLDER = f'workspace/{session["user_id"]}/'
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+    return jsonify({'message': 'create a new folder'}), 200
+
+
+@app.route('/')
+def index():
     # Check if index.html exists in the static folder
     if not os.path.exists(os.path.join(app.root_path, 'static/index.html')):
         print("index.html not found in static folder. Exiting. Did you forget to run `make compile_frontend` before installing the local package?")
@@ -233,7 +244,7 @@ def download_file():
     file = request.args.get('file')
     # from `workspace/` send the file
     # make sure to set required headers to make it download the file
-    return send_from_directory(os.path.join(os.getcwd(), 'workspace'), file, as_attachment=True)
+    return send_from_directory(os.path.join(os.getcwd(), f'workspace/{session["user_id"]}/'), file, as_attachment=True)
 
 
 @app.route('/inject-context', methods=['POST'])
@@ -248,25 +259,29 @@ def inject_context():
 
 @app.route('/generate', methods=['POST'])
 def generate_code():
+    windowId = request.json.get('windowId', '')
     user_prompt = request.json.get('prompt', '')
     user_openai_key = request.json.get('openAIKey', None)
     model = request.json.get('model', None)
 
     loop = asyncio.new_event_loop()
     asyncio.set_event_loop(loop)
-
+    code = ""
+    text = ""
+    status = 200
     code, text, status = loop.run_until_complete(
-        get_code(user_prompt, user_openai_key, model))
+        get_code(user_prompt, "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", model))
     loop.close()
 
     # Append all messages to the message buffer for later use
     message_buffer.append(user_prompt + "\n\n")
 
-    return jsonify({'code': code, 'text': text}), status
+    return jsonify({'code': code, 'text': text, 'windowId': windowId}), status
 
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
+    print(request.form.get("windowId"))
     # check if the post request has the file part
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in the request'}), 400

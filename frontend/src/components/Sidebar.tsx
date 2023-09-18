@@ -1,5 +1,5 @@
 import AssistantIcon from "@mui/icons-material/Assistant";
-
+import Config from "../config";
 import "./Sidebar.css";
 
 export default function Sidebar(props: {
@@ -9,10 +9,27 @@ export default function Sidebar(props: {
   setOpenAIKey: any;
   openAIKey: string;
 }) {
-  const handleOpenAIButtonClick = () => {
+  const handleOpenAIButtonClick = async () => {
     const key = prompt("Please enter your OpenAI key", props.openAIKey);
+    console.log(Config.WEB_ADDRESS);
     if (key != null) {
-      props.setOpenAIKey(key);
+      console.log(key);
+      sessionStorage.setItem("windowId", key);
+      try {
+        const response = await fetch(Config.WEB_ADDRESS + "/SetUserId", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ openAIKey: key }),
+        });
+
+        if (!response.ok) {
+          throw new Error("Network response was not ok");
+        }
+      } catch (error) {
+        console.error("Error:", error);
+      }
     }
   };
   return (
