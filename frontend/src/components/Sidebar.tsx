@@ -1,5 +1,5 @@
 import AssistantIcon from "@mui/icons-material/Assistant";
-import Config from "../config";
+// import Config from "../config";
 import "./Sidebar.css";
 
 export default function Sidebar(props: {
@@ -9,29 +9,37 @@ export default function Sidebar(props: {
   setOpenAIKey: any;
   openAIKey: string;
 }) {
-  const handleOpenAIButtonClick = async () => {
-    const key = prompt("Please enter your OpenAI key", props.openAIKey);
-    console.log(Config.WEB_ADDRESS);
-    if (key != null) {
-      console.log(key);
-      sessionStorage.setItem("windowId", key);
-      try {
-        const response = await fetch(Config.WEB_ADDRESS + "/SetUserId", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ openAIKey: key }),
-        });
+  // const handleOpenAIButtonClick = async () => {
+  //   const key = prompt("Please enter your OpenAI key", props.openAIKey);
+  //   console.log(Config.WEB_ADDRESS);
+  //   if (key != null) {
+  //     console.log(key);
+  //     sessionStorage.setItem("windowId", key);
+  //     try {
+  //       const response = await fetch(Config.WEB_ADDRESS + "/SetUserId", {
+  //         method: "POST",
+  //         headers: {
+  //           "Content-Type": "application/json",
+  //         },
+  //         body: JSON.stringify({ openAIKey: key }),
+  //       });
 
-        if (!response.ok) {
-          throw new Error("Network response was not ok");
-        }
-      } catch (error) {
-        console.error("Error:", error);
-      }
+  //       if (!response.ok) {
+  //         throw new Error("Network response was not ok");
+  //       }
+  //     } catch (error) {
+  //       console.error("Error:", error);
+  //     }
+  //   }
+  // };
+  const handleOpenAIButtonClick = () => {
+    const key = prompt("Please enter your OpenAI key", props.openAIKey);
+    if (key != null) {
+      sessionStorage.setItem("windowId", key);
+      props.setOpenAIKey(key);
     }
   };
+
   return (
     <>
       <div className="sidebar">

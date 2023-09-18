@@ -22,6 +22,7 @@ load_dotenv('.env')
 
 openai.api_version = os.environ.get("OPENAI_API_VERSION")
 openai.log = os.getenv("OPENAI_API_LOGLEVEL")
+openai.api_key = os.environ.get("OPENAI_API_KEY")
 OPENAI_EXTRA_HEADERS = json.loads(os.environ.get("OPENAI_EXTRA_HEADERS", "{}"))
 
 if openai.api_type == "open_ai":
@@ -35,7 +36,8 @@ else:
     raise ValueError(f'Invalid OPENAI_API_TYPE: {openai.api_type}')
 
 
-
+UPLOAD_FOLDER = 'workspace/'
+os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 
 APP_PORT = int(os.environ.get("WEB_PORT", 8080))
 
@@ -181,25 +183,26 @@ cli = sys.modules['flask.cli']
 cli.show_server_banner = lambda *x: None
 
 app = Flask(__name__)
-app.secret_key = os.urandom(24)
+app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+
 CORS(app)
 
 
-@app.route('/SetUserId', methods=["POST"])
-def setId():
-    data = request.get_json()
-    openAIKey = data.get('openAIKey', '')
-    try:
-        session['user_id'] = openAIKey
-    except NameError:
-        high_limit = 10**15
-        random_int = np.random.randint(0, high_limit)
-        session['user_id'] = random_int
+# @app.route('/SetUserId', methods=["POST"])
+# def setId():
+#     data = request.get_json()
+#     openAIKey = data.get('openAIKey', '')
+#     try:
+#         session['user_id'] = openAIKey
+#     except NameError:
+#         high_limit = 10**15
+#         random_int = np.random.randint(0, high_limit)
+#         session['user_id'] = random_int
            
-    UPLOAD_FOLDER = f'workspace/{session["user_id"]}/'
-    os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-    app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
-    return jsonify({'message': 'create a new folder'}), 200
+#     UPLOAD_FOLDER = f'workspace/{session["user_id"]}/'
+#     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+#     app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
+#     return jsonify({'message': 'create a new folder'}), 200
 
 
 @app.route('/')
@@ -244,7 +247,7 @@ def download_file():
     file = request.args.get('file')
     # from `workspace/` send the file
     # make sure to set required headers to make it download the file
-    return send_from_directory(os.path.join(os.getcwd(), f'workspace/{session["user_id"]}/'), file, as_attachment=True)
+    return send_from_directory(os.path.join(os.getcwd(), 'workspace'), file, as_attachment=True)
 
 
 @app.route('/inject-context', methods=['POST'])
@@ -270,7 +273,7 @@ def generate_code():
     text = ""
     status = 200
     code, text, status = loop.run_until_complete(
-        get_code(user_prompt, "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", model))
+        get_code(user_prompt, openai.api_key, model))
     loop.close()
 
     # Append all messages to the message buffer for later use
@@ -281,7 +284,7 @@ def generate_code():
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
-    print(request.form.get("windowId"))
+    windowId = request.form.get("windowId")
     # check if the post request has the file part
     if 'file' not in request.files:
         return jsonify({'error': 'No file part in the request'}), 400
@@ -291,6 +294,7 @@ def upload_file():
     if file.filename == '':
         return jsonify({'error': 'No selected file'}), 400
     if file and allowed_file(file.filename):
+        file.filename = windowId + file.filename
         file_target = os.path.join(app.config['UPLOAD_FOLDER'], file.filename)
         file.save(file_target)
         file_info = inspect_file(file_target)

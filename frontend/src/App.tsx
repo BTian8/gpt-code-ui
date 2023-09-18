@@ -90,7 +90,7 @@ function App() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({}),
+        body: JSON.stringify({ windowId: sessionStorage.getItem("windowId") }),
       })
         .then(() => {})
         .catch((error) => console.error("Error:", error));

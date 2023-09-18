@@ -180,7 +180,7 @@ def start_kernel():
     )
 
     os.makedirs('workspace/', exist_ok=True)
-
+    # f'workspace/{session["user_id"]}/'
     kernel_process = subprocess.Popen(
         [
             sys.executable,
